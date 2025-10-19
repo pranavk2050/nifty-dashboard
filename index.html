@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nifty 50: Top 10 Stocks Analysis</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="text-gray-800">
+
+    <div class="min-h-screen">
+        <header class="bg-white shadow-md">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <h1 class="text-3xl font-bold text-gray-900">Nifty 50: Top 10 Stocks Analysis</h1>
+                <p class="text-md text-gray-600 mt-1">An interactive dashboard exploring the growth potential of market leaders.</p>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white p-4 rounded-lg shadow mb-8">
+                <nav id="navigation" class="flex flex-wrap items-center justify-center gap-2 md:gap-4">
+                    <button data-section="overview" class="nav-button font-semibold py-2 px-5 rounded-full bg-gray-200 text-gray-700">Overview</button>
+                    <button data-section="comparison" class="nav-button font-semibold py-2 px-5 rounded-full bg-gray-200 text-gray-700">Comparative Analysis</button>
+                    <button data-section="details" class="nav-button font-semibold py-2 px-5 rounded-full bg-gray-200 text-gray-700">Stock Details</button>
+                </nav>
+            </div>
+            
+            <section id="overview" class="space-y-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Market Overview</h2>
+                    <p class="text-gray-600 max-w-3xl">This section provides a high-level snapshot of the top 10 Nifty 50 stocks by their weightage. The chart illustrates the sectoral dominance within this elite group, giving you a quick understanding of which industries drive the index. These 10 companies represent a significant portion of the entire Nifty 50 index.</p>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4 text-center">Sector Distribution of Top 10 Stocks</h3>
+                        <div class="chart-container mx-auto" style="height:350px; max-height:400px;">
+                            <canvas id="sectorDonutChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col justify-center">
+                        <h3 class="text-xl font-semibold mb-4">Key Insights</h3>
+                        <ul class="space-y-4 text-gray-700">
+                            <li class="flex items-start">
+                                <span class="text-blue-600 font-bold mr-3">▶</span>
+                                <div><strong class="font-semibold text-gray-900">Financial Dominance:</strong> The Banking and Financial Services sector holds the most significant weight among the top 10 stocks.</div>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-600 font-bold mr-3">▶</span>
+                                <div><strong class="font-semibold text-gray-900">Tech Powerhouses:</strong> The IT sector, represented by giants like TCS and Infosys, continues to be a crucial component of the index.</div>
+                            </li>
+                             <li class="flex items-start">
+                                <span class="text-blue-600 font-bold mr-3">▶</span>
+                                <div><strong class="font-semibold text-gray-900">Diversified Leaders:</strong> Conglomerates and leaders in Energy, FMCG, and Telecom provide stability and diverse growth drivers to the Nifty 50.</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="comparison" class="hidden space-y-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Comparative Analysis</h2>
+                    <p class="text-gray-600 max-w-3xl">Interactively compare the top 10 stocks on key financial metrics. The bubble chart below visualizes three dimensions of data at once to reveal relationships between valuation, performance, and market size. Use the table for a detailed, sortable view. Click any stock in the chart or table to see its detailed analysis.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Valuation vs. Performance vs. Market Cap</h3>
+                    <div class="chart-container">
+                        <canvas id="stocksBubbleChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4">Detailed Metrics Comparison</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="p-3 font-semibold sortable" data-sort="name">Company Name</th>
+                                    <th class="p-3 font-semibold sortable text-right" data-sort="marketCap">Market Cap (₹ Lakh Cr)</th>
+                                    <th class="p-3 font-semibold sortable text-right" data-sort="peRatio">P/E Ratio</th>
+                                    <th class="p-3 font-semibold sortable text-right" data-sort="oneYearReturn">1-Yr Return (%)</th>
+                                    <th class="p-3 font-semibold sortable text-right" data-sort="weightage">Nifty 50 Weightage (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stocksTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="details" class="hidden space-y-8">
+                 <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Individual Stock Deep Dive</h2>
+                    <p class="text-gray-600 max-w-3xl">Explore the qualitative factors driving each company's potential. This section provides a summary of the key growth drivers and potential risks for the stock you've selected. Use the dropdown below or select a stock from the 'Comparative Analysis' section to get started.</p>
+                </div>
+                <div class="text-center mb-6">
+                     <select id="stockSelector" class="p-3 border-2 border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                     </select>
+                </div>
+                <div id="stockDetailsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
