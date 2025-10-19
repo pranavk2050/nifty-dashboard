@@ -4,9 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nifty 50: Top 10 Stocks Analysis</title>
-    <link rel="stylesheet" href="css/styles.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Corporate Calm -->
+    <!-- Application Structure Plan: The SPA is designed with a multi-section layout controlled by tabs (Overview, Compare, Details) to guide the user from a high-level summary to detailed analysis. This structure avoids overwhelming the user with information. The 'Overview' provides immediate market context (sector distribution). The 'Compare' section is the core interactive tool, using a bubble chart and a sortable table for multi-metric comparison. The 'Details' section serves as a drill-down, updating dynamically to show qualitative data for a selected stock. This progressive disclosure of information is chosen for usability, allowing users to explore at their own pace rather than consuming a linear report. -->
+    <!-- Visualization & Content Choices: 
+    - Sector Distribution: Goal is to inform. A Donut Chart (Chart.js/Canvas) is used for its clear part-to-whole relationship representation. Interaction: Hover for tooltips.
+    - Multi-Metric Stock Comparison: Goal is to compare. An Interactive Bubble Chart (Chart.js/Canvas) visualizes three dimensions of data (P/E Ratio, 1-Yr Return, Market Cap) simultaneously. Interaction: Hover for stats, click to select a stock. This is more insightful than separate bar charts.
+    - Full Data Table: Goal is to organize and compare. A sortable HTML Table is used for users who prefer granular, tabular data. Interaction: Click headers to sort, click rows to select stock.
+    - Qualitative Data (Drivers/Risks): Goal is to inform. Dynamic HTML content blocks are used, updating on stock selection. This keeps the interface clean. Interaction: Content changes based on user selection from other components.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 450px;
+                max-height: 500px;
+            }
+        }
+        .nav-button {
+            transition: all 0.3s ease;
+        }
+        .nav-button.active {
+            background-color: #1e3a8a;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .stock-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .sortable:hover {
+            cursor: pointer;
+            background-color: #f1f5f9;
+        }
+        .table-row-selectable:hover {
+            background-color: #e0e7ff;
+            cursor: pointer;
+        }
+        .selected-row {
+            background-color: #c7d2fe !important;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body class="text-gray-800">
 
@@ -106,6 +165,276 @@
         </main>
     </div>
 
-    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const stockData = [
+                { id: 'RIL', name: 'Reliance Industries', sector: 'Energy', marketCap: 19.5, peRatio: 28.5, oneYearReturn: 25.2, weightage: 11.5,
+                    drivers: ['Dominance in telecom (Jio) and retail sectors.', 'Expansion in green energy and new technologies.', 'Strong cash flow from traditional oil & gas business.'],
+                    risks: ['Volatility in crude oil prices.', 'High capital expenditure for new ventures.', 'Regulatory changes in telecom and retail.']
+                },
+                { id: 'HDFCBANK', name: 'HDFC Bank', sector: 'Financial Services', marketCap: 12.5, peRatio: 19.8, oneYearReturn: 15.8, weightage: 9.8,
+                    drivers: ['Largest private sector bank with a strong retail franchise.', 'Post-merger synergies with HDFC Ltd.', 'Consistent loan growth and stable asset quality.'],
+                    risks: ['Integration challenges post-merger.', 'Intense competition from other banks and fintech.', 'Impact of interest rate fluctuations on margins.']
+                },
+                { id: 'ICICIBANK', name: 'ICICI Bank', sector: 'Financial Services', marketCap: 8.2, peRatio: 18.2, oneYearReturn: 22.5, weightage: 7.9,
+                    drivers: ['Strong growth in digital banking services.', 'Improving asset quality and profitability.', 'Focus on high-margin retail loans.'],
+                    risks: ['Exposure to corporate lending cycles.', 'Competition in the retail banking space.', 'Macroeconomic slowdown affecting credit demand.']
+                },
+                { id: 'INFY', name: 'Infosys', sector: 'IT Services', marketCap: 7.1, peRatio: 25.1, oneYearReturn: 18.9, weightage: 6.5,
+                    drivers: ['Strong demand for digital transformation and cloud services.', 'Large deal wins from global clients.', 'Investments in AI and automation capabilities.'],
+                    risks: ['Global economic slowdown affecting client spending.', 'Currency exchange rate volatility.', 'High employee attrition rates.']
+                },
+                { id: 'TCS', name: 'Tata Consultancy Services', sector: 'IT Services', marketCap: 14.5, peRatio: 30.3, oneYearReturn: 16.5, weightage: 5.8,
+                    drivers: ['Market leader with a diverse client base across industries.', 'Consistent dividend payouts and strong financials.', 'Long-term relationships with Fortune 500 companies.'],
+                    risks: ['Concentration risk in BFSI sector.', 'Slower growth compared to smaller, more agile competitors.', 'Wage inflation impacting margins.']
+                },
+                { id: 'BHARTIARTL', name: 'Bharti Airtel', sector: 'Telecommunication', marketCap: 7.5, peRatio: 45.2, oneYearReturn: 35.1, weightage: 4.5,
+                    drivers: ['Rising Average Revenue Per User (ARPU) due to tariff hikes.', 'Strong growth in 5G user base and enterprise solutions.', 'Expansion of African business operations.'],
+                    risks: ['Intense price competition with Jio.', 'High spectrum acquisition costs and capex.', 'Regulatory uncertainties and government policies.']
+                },
+                { id: 'L&T', name: 'Larsen & Toubro', sector: 'Infrastructure', marketCap: 4.8, peRatio: 35.0, oneYearReturn: 40.2, weightage: 4.2,
+                    drivers: ['Government\'s focus on infrastructure development (roads, railways).', 'Strong order book providing revenue visibility.', 'Diversification into defense and green hydrogen.'],
+                    risks: ['Execution delays in large projects.', 'Dependence on government spending and policy.', 'Fluctuations in commodity prices.']
+                },
+                { id: 'HUL', name: 'Hindustan Unilever', sector: 'FMCG', marketCap: 5.9, peRatio: 56.1, oneYearReturn: 8.2, weightage: 3.8,
+                    drivers: ['Strong brand portfolio and extensive distribution network.', 'Focus on premiumization and product innovation.', 'Recovery in rural demand.'],
+                    risks: ['High inflation impacting raw material costs and consumer demand.', 'Competition from regional and D2C brands.', 'Changes in consumer preferences.']
+                },
+                { id: 'ITC', name: 'ITC Ltd.', sector: 'FMCG', marketCap: 5.5, peRatio: 25.5, oneYearReturn: 12.3, weightage: 3.5,
+                    drivers: ['Strong performance of non-cigarette FMCG business.', 'Growth in Hotels and Agri-business sectors.', 'Attractive dividend yield and stable cash flows from cigarette business.'],
+                    risks: ['Regulatory risks associated with the tobacco industry.', 'Slowdown in consumer spending.', 'Competition in the crowded FMCG space.']
+                },
+                { id: 'BAJFINANCE', name: 'Bajaj Finance', sector: 'Financial Services', marketCap: 4.5, peRatio: 33.8, oneYearReturn: 19.8, weightage: 3.1,
+                    drivers: ['Leader in consumer durable financing with a large customer base.', 'Diversification into new lending segments.', 'Robust digital ecosystem and app usage.'],
+                    risks: ['Asset quality concerns in case of economic downturn.', 'Intense competition from banks and fintech lenders.', 'High valuation compared to peers.']
+                },
+            ];
+
+            let activeSection = 'overview';
+            let selectedStockId = stockData[0].id;
+            let sortConfig = { key: 'marketCap', direction: 'desc' };
+            
+            const sections = {
+                overview: document.getElementById('overview'),
+                comparison: document.getElementById('comparison'),
+                details: document.getElementById('details'),
+            };
+
+            const charts = {};
+
+            const getSectorData = () => {
+                const sectorCounts = stockData.reduce((acc, stock) => {
+                    acc[stock.sector] = (acc[stock.sector] || 0) + 1;
+                    return acc;
+                }, {});
+                return {
+                    labels: Object.keys(sectorCounts),
+                    data: Object.values(sectorCounts),
+                };
+            };
+            
+            const renderSectorDonutChart = () => {
+                const ctx = document.getElementById('sectorDonutChart').getContext('2d');
+                if (charts.sector) charts.sector.destroy();
+                const sectorData = getSectorData();
+                charts.sector = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: sectorData.labels,
+                        datasets: [{
+                            data: sectorData.data,
+                            backgroundColor: ['#1d4ed8', '#059669', '#f97316', '#9333ea', '#db2777', '#facc15'],
+                            borderColor: '#f8fafc',
+                            borderWidth: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 14 },
+                                    color: '#334155',
+                                    padding: 20,
+                                }
+                            },
+                            tooltip: {
+                                bodyFont: { size: 14 },
+                                titleFont: { size: 16, weight: 'bold' }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const renderBubbleChart = () => {
+                const ctx = document.getElementById('stocksBubbleChart').getContext('2d');
+                if (charts.bubble) charts.bubble.destroy();
+
+                const bubbleData = stockData.map(stock => ({
+                    x: stock.peRatio,
+                    y: stock.oneYearReturn,
+                    r: Math.sqrt(stock.marketCap) * 6,
+                    label: stock.name
+                }));
+
+                charts.bubble = new Chart(ctx, {
+                    type: 'bubble',
+                    data: {
+                        datasets: [{
+                            label: 'Top 10 Stocks',
+                            data: bubbleData,
+                            backgroundColor: 'rgba(30, 64, 175, 0.6)',
+                            borderColor: 'rgba(30, 64, 175, 1)',
+                            borderWidth: 1,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        onClick: (e, elements) => {
+                            if (elements.length > 0) {
+                                const stockIndex = elements[0].index;
+                                selectStock(stockData[stockIndex].id);
+                                updateActiveSection('details');
+                            }
+                        },
+                        scales: {
+                            y: {
+                                title: { display: true, text: '1-Year Return (%)', font: { size: 14, weight: '500' } }
+                            },
+                            x: {
+                                title: { display: true, text: 'P/E Ratio', font: { size: 14, weight: '500' } }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const stock = stockData[context.dataIndex];
+                                        return `${stock.name}: P/E ${stock.peRatio}, Return ${stock.oneYearReturn}%, MCap ${stock.marketCap}L Cr`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            const sortData = () => {
+                stockData.sort((a, b) => {
+                    const aVal = a[sortConfig.key];
+                    const bVal = b[sortConfig.key];
+                    if (typeof aVal === 'string') {
+                        return sortConfig.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    }
+                    return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+                });
+            };
+            
+            const renderTable = () => {
+                sortData();
+                const tableBody = document.getElementById('stocksTableBody');
+                tableBody.innerHTML = stockData.map(stock => `
+                    <tr class="border-b border-gray-100 table-row-selectable ${stock.id === selectedStockId ? 'selected-row' : ''}" data-stock-id="${stock.id}">
+                        <td class="p-3">${stock.name}</td>
+                        <td class="p-3 text-right">${stock.marketCap.toFixed(2)}</td>
+                        <td class="p-3 text-right">${stock.peRatio.toFixed(2)}</td>
+                        <td class="p-3 text-right">${stock.oneYearReturn.toFixed(2)}</td>
+                        <td class="p-3 text-right">${stock.weightage.toFixed(2)}</td>
+                    </tr>
+                `).join('');
+                
+                document.querySelectorAll('#stocksTableBody tr').forEach(row => {
+                    row.addEventListener('click', () => {
+                        selectStock(row.dataset.stockId);
+                    });
+                });
+            };
+            
+            const renderStockDetails = () => {
+                const stock = stockData.find(s => s.id === selectedStockId);
+                const container = document.getElementById('stockDetailsContainer');
+                if (!stock) {
+                    container.innerHTML = `<p>Select a stock to see details.</p>`;
+                    return;
+                }
+                container.innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-lg stock-card">
+                        <h3 class="text-xl font-bold text-emerald-700 mb-4">Key Growth Drivers</h3>
+                        <ul class="space-y-3 list-disc list-inside text-gray-700">
+                            ${stock.drivers.map(d => `<li>${d}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg stock-card">
+                        <h3 class="text-xl font-bold text-red-700 mb-4">Potential Risks</h3>
+                        <ul class="space-y-3 list-disc list-inside text-gray-700">
+                           ${stock.risks.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            };
+
+            const populateStockSelector = () => {
+                const selector = document.getElementById('stockSelector');
+                selector.innerHTML = stockData.map(stock => `<option value="${stock.id}" ${stock.id === selectedStockId ? 'selected' : ''}>${stock.name}</option>`).join('');
+            };
+
+            const updateActiveSection = (sectionId) => {
+                activeSection = sectionId;
+                Object.values(sections).forEach(section => section.classList.add('hidden'));
+                sections[sectionId].classList.remove('hidden');
+
+                document.querySelectorAll('#navigation button').forEach(button => {
+                    button.classList.toggle('active', button.dataset.section === sectionId);
+                });
+            };
+
+            const selectStock = (stockId) => {
+                selectedStockId = stockId;
+                renderTable();
+                renderStockDetails();
+                populateStockSelector();
+                document.getElementById('stockSelector').value = stockId;
+            };
+
+            document.getElementById('navigation').addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    updateActiveSection(e.target.dataset.section);
+                }
+            });
+
+            document.getElementById('stockSelector').addEventListener('change', (e) => {
+                selectStock(e.target.value);
+            });
+            
+            document.querySelectorAll('.sortable').forEach(header => {
+                header.addEventListener('click', () => {
+                    const key = header.dataset.sort;
+                    if (sortConfig.key === key) {
+                        sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortConfig.key = key;
+                        sortConfig.direction = 'desc';
+                    }
+                    renderTable();
+                });
+            });
+
+            const init = () => {
+                updateActiveSection('overview');
+                renderSectorDonutChart();
+                renderBubbleChart();
+                renderTable();
+                renderStockDetails();
+                populateStockSelector();
+            };
+
+            init();
+        });
+    </script>
 </body>
 </html>
